@@ -2,8 +2,15 @@ using UnityEngine;
 
 public class Rideable_print : MonoBehaviour
 {
-    public Transform mountPoint;
-    public float moveSpeed = 10f;
+    public Transform mountPoint; // จุดสำหรับให้คนนั่ง
+    public float moveSpeed = 10f; // ความเร็วของสัตว์ตัวนี้
 
-    // ไม่ต้องใช้ Animator anim; และ UpdateAnimation แล้วถ้าจะให้วิ่งตลอดเวลา
+    private Animator anim;
+
+    void Awake()
+    {
+        // ค้นหา Animator ในตัวสัตว์โดยอัตโนมัติ
+        anim = GetComponent<Animator>();
+        if (anim == null) anim = GetComponentInChildren<Animator>();
+    }
 }
