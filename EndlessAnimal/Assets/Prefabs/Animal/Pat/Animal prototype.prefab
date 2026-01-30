@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 999448312532709696}
   - component: {fileID: 6016315883314902096}
   m_Layer: 6
-  m_Name: Animal test
+  m_Name: Animal prototype
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
