@@ -2,9 +2,9 @@ using UnityEngine;
 
 public class Rideable : MonoBehaviour
 {
-    // จุดที่ผู้เล่นจะไปนั่ง (สร้าง Empty GameObject ชื่อ MountPoint ไว้ใน Cube สัตว์)
+    // ๏ฟฝุด๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ่นจ๏ฟฝไปน๏ฟฝ๏ฟฝ (๏ฟฝ๏ฟฝ๏ฟฝาง Empty GameObject ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ MountPoint ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ Cube ๏ฟฝัต๏ฟฝ๏ฟฝ)
     public Transform mountPoint;
 
-    // ไว้ปรับแต่งว่าสัตว์ตัวนี้วิ่งเร็วแค่ไหน (เดี๋ยว Role B มาทำต่อ)
+    // ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝับ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝัต๏ฟฝ๏ฟฝ๏ฟฝวน๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝหน (๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ Role B ๏ฟฝาทำต๏ฟฝ๏ฟฝ)
     public float moveSpeed = 10f;
 }
