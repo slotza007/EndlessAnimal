@@ -5,14 +5,14 @@ public class PlayerRodeoController : MonoBehaviour
     [Header("Movement Settings")]
     public float forwardSpeed = 10f;
     public float strafeSpeed = 8f;
-    public float jumpPower = 15f; // ความแรงในการดีดตัวขึ้นฟ้า
-    public float pushForwardForce = 5f; // แรงส่งไปข้างหน้าตอนกระโดด
+    public float jumpPower = 20f; // ปรับค่านี้แทนน้าหนักการกระโดด
+    public float extraGravity = 60f; // แรงดึงดูดทำมือ (ยิ่งเยอะ ยิ่งลงไว)
 
     [Header("Target System")]
     public float searchRadius = 8f;
-    public LayerMask animalLayer; // อย่าลืมตั้งเป็น Animal
-    public GameObject targetIndicator; // ลาก Prefab วงกลมมาใส่
-    public float indicatorHeight = 0.2f; // ความสูงของวงกลมจากพื้น
+    public LayerMask animalLayer;
+    public GameObject targetIndicator;
+    public float indicatorHeight = 0.2f;
 
     [Header("Setup")]
     public Rideable startingAnimal;
@@ -23,6 +23,9 @@ public class PlayerRodeoController : MonoBehaviour
     private Rideable targetAnimal;
     private Rigidbody rb;
 
+    // [ตัวแปรใหม่] เก็บความเร็วแนวดิ่งที่เราคำนวณเอง
+    private float verticalVelocity = 0f;
+
     [Header("Animation")]
     public Animator anim;
 
@@ -30,9 +33,10 @@ public class PlayerRodeoController : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
 
-        // Setup Rigidbody
-        rb.useGravity = true;
-        rb.constraints = RigidbodyConstraints.FreezeRotation; // ห้ามหมุน แต่ต้องขยับ Y ได้
+        // ปิด Gravity ของ Unity ไปเลย เพราะเราจะคำนวณเอง
+        rb.useGravity = false;
+
+        rb.constraints = RigidbodyConstraints.FreezeRotation;
 
         if (startingAnimal != null)
         {
@@ -40,66 +44,59 @@ public class PlayerRodeoController : MonoBehaviour
         }
         else
         {
-            JumpOff(); // ถ้าไม่มีสัตว์เริ่ม ให้ถือว่ากระโดดอยู่
+            JumpOff();
         }
     }
 
     void Update()
     {
-        // รับ Input กระโดดที่นี่ (เพื่อให้กดติดง่าย)
         if (Input.GetKeyDown(KeyCode.Space) && !isJumping)
         {
             JumpOff();
         }
 
-        // รับ Input ขี่สัตว์
         if (isJumping && Input.GetKeyDown(KeyCode.E) && targetAnimal != null)
         {
             MountAnimal(targetAnimal);
         }
 
-        // อัปเดตตำแหน่งวงกลมเป้าหมาย
         HandleIndicator();
     }
 
-    // ใช้ FixedUpdate คำนวณการเคลื่อนที่ (Physics)
     void FixedUpdate()
     {
         float horizontal = Input.GetAxis("Horizontal");
 
         if (isJumping)
         {
-            // --- โหมดลอยตัว (Control กลางอากาศ) ---
-            // เราจะใช้ Velocity บังคับ Rigidbody โดยตรง
-            Vector3 currentVel = rb.linearVelocity;
+            // --- โหมดลอยตัว (Manual Gravity) ---
 
-            // คงความเร็วแนวดิ่ง (Y) ไว้ตามแรงโน้มถ่วง แต่เปลี่ยนแกน X และ Z
+            // 1. คำนวณแรงดึงดูด (ลดค่า Y ลงเรื่อยๆ ตามเวลา)
+            verticalVelocity -= extraGravity * Time.fixedDeltaTime;
+
+            // 2. เอาค่า Y ที่คำนวณได้ ไปใส่ในความเร็วรวมเลย (ไม่ต้องใช้ AddForce)
             Vector3 targetVel = new Vector3(
                 horizontal * strafeSpeed,
-                currentVel.y, // สำคัญ! ต้องใช้ค่าเดิมเพื่อให้ Gravity ทำงาน
+                verticalVelocity, // ใช้ค่าที่เราคุมเอง
                 forwardSpeed
             );
 
             rb.linearVelocity = targetVel;
 
-            // ค้นหาสัตว์ตลอดเวลาที่ลอย
             FindTargetAnimal();
         }
         else if (currentAnimal != null)
         {
             // --- โหมดขี่สัตว์ ---
-            // สั่งให้สัตว์ขยับ (ใช้ Translate ได้เพราะสัตว์ไม่มี Rigidbody)
             Vector3 move = new Vector3(horizontal * strafeSpeed, 0, forwardSpeed) * Time.fixedDeltaTime;
             currentAnimal.transform.Translate(move);
         }
     }
 
-    // ใช้ LateUpdate เพื่อล็อคตัวคนให้ติดสัตว์ (แก้ปัญหาตัวหลุด/สั่น)
     void LateUpdate()
     {
         if (!isJumping && currentAnimal != null)
         {
-            // วาร์ปตัวคนไปที่ MountPoint ทันทีหลังจากสัตว์ขยับเสร็จแล้ว
             transform.position = currentAnimal.mountPoint.position;
             transform.rotation = currentAnimal.mountPoint.rotation;
         }
@@ -113,11 +110,12 @@ public class PlayerRodeoController : MonoBehaviour
 
         if (anim != null) anim.SetBool("isJumping", true);
 
-        // --- จุดที่แก้ ---
-        rb.isKinematic = false; // เปิดฟิสิกส์ก่อน
-        rb.linearVelocity = Vector3.zero; // รีเซ็ตความเร็วด้วยคำสั่งใหม่
-        rb.AddForce(Vector3.up * jumpPower + Vector3.forward * pushForwardForce, ForceMode.Impulse);
-        // ----------------
+        rb.isKinematic = false;
+
+        // [จุดที่แก้] กำหนดความเร็วแกน Y ทันที (ดีดตัวขึ้น)
+        verticalVelocity = jumpPower;
+
+        // (Forward Force ไม่จำเป็นต้องใส่ตรงนี้ เพราะ FixedUpdate จะคุมความเร็วไปข้างหน้าให้อัตโนมัติแล้ว)
     }
 
     void MountAnimal(Rideable newAnimal)
@@ -126,18 +124,15 @@ public class PlayerRodeoController : MonoBehaviour
         currentAnimal = newAnimal;
         targetAnimal = null;
 
-        // [เพิ่ม] สั่งให้กลับมาเล่นท่านั่ง
+        // Reset ความเร็วตกเมื่อเกาะได้
+        verticalVelocity = 0f;
+
         if (anim != null) anim.SetBool("isJumping", false);
 
         if (targetIndicator != null) targetIndicator.SetActive(false);
 
-        // --- จุดที่แก้ ---
-        // 1. หยุดความเร็วก่อน (ใช้คำสั่งใหม่ linearVelocity)
         rb.linearVelocity = Vector3.zero;
-
-        // 2. แล้วค่อยเปิด Kinematic (ปิดฟิสิกส์)
         rb.isKinematic = true;
-        // ----------------
 
         transform.position = newAnimal.mountPoint.position;
         transform.rotation = newAnimal.mountPoint.rotation;
@@ -151,7 +146,6 @@ public class PlayerRodeoController : MonoBehaviour
 
         foreach (var hit in hits)
         {
-            // ต้องเป็นสัตว์ตัวอื่น และอยู่ข้างหน้า
             if (hit.GetComponent<Rideable>() != currentAnimal && hit.transform.position.z > transform.position.z)
             {
                 float dst = Vector3.Distance(transform.position, hit.transform.position);
@@ -175,7 +169,6 @@ public class PlayerRodeoController : MonoBehaviour
 
             if (targetAnimal != null)
             {
-                // ถ้าเจอสัตว์: วงกลมดูดไปที่สัตว์
                 targetIndicator.transform.position = new Vector3(
                     targetAnimal.transform.position.x,
                     indicatorHeight,
@@ -184,11 +177,10 @@ public class PlayerRodeoController : MonoBehaviour
             }
             else
             {
-                // ถ้าไม่เจอ: วงกลมลอยนำหน้าเรา
                 targetIndicator.transform.position = new Vector3(
                     transform.position.x,
                     indicatorHeight,
-                    transform.position.z + 5f // ระยะห่างวงกลม
+                    transform.position.z + 5f
                 );
             }
         }
@@ -198,7 +190,6 @@ public class PlayerRodeoController : MonoBehaviour
         }
     }
 
-    // วาดเส้น Debug ในหน้า Scene View (เส้นแดงๆ)
     void OnDrawGizmos()
     {
         Gizmos.color = Color.red;
@@ -208,6 +199,24 @@ public class PlayerRodeoController : MonoBehaviour
         {
             Gizmos.color = Color.green;
             Gizmos.DrawLine(transform.position, targetAnimal.transform.position);
+        }
+    }
+
+    // ฟังก์ชันนี้จะทำงานทันทีที่ตัวคน (ที่มี CapsuleCollider) ไปชนกับอะไรสักอย่างที่มี Collider
+    void OnCollisionEnter(Collision collision)
+    {
+        // เช็คว่าสิ่งที่ชนมี Tag ชื่อ "Ground" หรือไม่
+        // (แถม: เช็ค Obstacle เผื่อไว้ด้วย กรณีโดดไปชนต้นไม้กลางอากาศ)
+        if (collision.gameObject.CompareTag("Ground") || collision.gameObject.CompareTag("Obstacle"))
+        {
+            Debug.Log("Game Over! ผู้เล่นตกพื้น/ชน: " + collision.gameObject.name);
+
+            // เรียก GameManager ให้จบเกม
+            GameManager gm = FindFirstObjectByType<GameManager>();
+            if (gm != null)
+            {
+                gm.GameOver();
+            }
         }
     }
 }
