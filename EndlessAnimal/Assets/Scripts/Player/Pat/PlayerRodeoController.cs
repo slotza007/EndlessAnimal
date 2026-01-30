@@ -23,6 +23,9 @@ public class PlayerRodeoController : MonoBehaviour
     private Rideable targetAnimal;
     private Rigidbody rb;
 
+    [Header("Animation")]
+    public Animator anim;
+
     void Start()
     {
         rb = GetComponent<Rigidbody>();
@@ -108,14 +111,13 @@ public class PlayerRodeoController : MonoBehaviour
         currentAnimal = null;
         targetAnimal = null;
 
-        // เปิด Physics
-        rb.isKinematic = false;
+        if (anim != null) anim.SetBool("isJumping", true);
 
-        // Reset ความเร็วก่อนดีดตัว (เพื่อให้โดดสูงเท่ากันทุกครั้ง)
-        rb.linearVelocity = Vector3.zero;
-
-        // ใส่แรงกระโดด (ขึ้นฟ้า + ไปข้างหน้า)
+        // --- จุดที่แก้ ---
+        rb.isKinematic = false; // เปิดฟิสิกส์ก่อน
+        rb.linearVelocity = Vector3.zero; // รีเซ็ตความเร็วด้วยคำสั่งใหม่
         rb.AddForce(Vector3.up * jumpPower + Vector3.forward * pushForwardForce, ForceMode.Impulse);
+        // ----------------
     }
 
     void MountAnimal(Rideable newAnimal)
@@ -124,11 +126,21 @@ public class PlayerRodeoController : MonoBehaviour
         currentAnimal = newAnimal;
         targetAnimal = null;
 
-        // ปิด Physics เพื่อให้เกาะติด
-        rb.isKinematic = true;
+        // [เพิ่ม] สั่งให้กลับมาเล่นท่านั่ง
+        if (anim != null) anim.SetBool("isJumping", false);
 
-        // ลบบรรทัด rb.velocity = Vector3.zero; ออก เพื่อแก้ Error สีเหลืองครับ
-        // เพราะเมื่อ isKinematic = true แล้ว วัตถุจะหยุดคำนวณความเร็วโดยอัตโนมัติครับ
+        if (targetIndicator != null) targetIndicator.SetActive(false);
+
+        // --- จุดที่แก้ ---
+        // 1. หยุดความเร็วก่อน (ใช้คำสั่งใหม่ linearVelocity)
+        rb.linearVelocity = Vector3.zero;
+
+        // 2. แล้วค่อยเปิด Kinematic (ปิดฟิสิกส์)
+        rb.isKinematic = true;
+        // ----------------
+
+        transform.position = newAnimal.mountPoint.position;
+        transform.rotation = newAnimal.mountPoint.rotation;
     }
 
     void FindTargetAnimal()
