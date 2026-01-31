@@ -1085,6 +1085,7 @@ GameObject:
   - component: {fileID: 7922649801668778611}
   - component: {fileID: 7922649801668778604}
   - component: {fileID: 5376119210753586508}
+  - component: {fileID: 5142615088935273494}
   m_Layer: 0
   m_Name: Deerrundel
   m_TagString: Untagged
@@ -1215,6 +1216,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AnimalRunForward
   speed: 5
   lifeTime: 10
+--- !u!114 &5142615088935273494
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7402009758359158996}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c52c71e3a9eb59c47bd91bdf3873b401, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Rideable
+  mountPoint: {fileID: 9144565752038170153}
+  moveSpeed: 10
 --- !u!1 &7500468941402322376
 GameObject:
   m_ObjectHideFlags: 0
