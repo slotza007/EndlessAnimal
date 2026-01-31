@@ -102,7 +102,7 @@ public class MainMenuController : MonoBehaviour
     // --- ปุ่ม Start (ทำงานเมื่อกด RUN) ---
     public void PlayGame()
     {
-        SceneManager.LoadScene("MainsceneTest");
+        SceneManager.LoadScene("MainsceneTest01");
     }
 
     public void QuitGame()

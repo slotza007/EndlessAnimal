@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.SceneManagement;
-using System; // จำเป็นต้องมีบรรทัดนี้เพื่อใช้ Action
+using System;
 
 public class GameManager : MonoBehaviour
 {
@@ -12,55 +12,41 @@ public class GameManager : MonoBehaviour
     [Header("Game Data")]
     public float distance;
 
-    // สร้าง Event ชื่อ OnGameOver (ลบตัวแปร gameOverUI ทิ้งไปได้เลย)
     public event Action OnGameOver;
 
     private void Awake()
     {
-        // ตั้งค่า Singleton
-        if (Instance == null)
-        {
-            Instance = this;
-        }
-        else
-        {
-            Destroy(gameObject);
-            return;
-        }
+        if (Instance == null) { Instance = this; }
+        else { Destroy(gameObject); return; }
     }
 
     private void Update()
     {
         if (isPlaying)
         {
-            // เพิ่มระยะทางตามเวลา (ปรับตัวคูณได้ตามความเร็วเกม)
             distance += Time.deltaTime * 10f;
         }
     }
 
-    // ฟังก์ชันจบเกม
     public void GameOver()
     {
         if (!isPlaying) return;
-
         isPlaying = false;
-        Time.timeScale = 0f; // หยุดเวลา
-
-        Debug.Log("🟥 GameManager: ประกาศ Event OnGameOver");
-
-        // ตะโกนบอกทุกคนที่รอฟังว่า "จบเกมแล้ว!"
+        Time.timeScale = 0f;
+        Debug.Log("🟥 GameManager: Game Over");
         OnGameOver?.Invoke();
     }
 
     public void RestartGame()
     {
-        Time.timeScale = 1f; // คืนค่าเวลาให้เดินปกติ
+        Time.timeScale = 1f; // คืนค่าเวลาก่อนโหลดฉาก
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
+    // [เพิ่ม] ฟังก์ชันกลับหน้าเมนู
     public void GoToMenu()
     {
-        Time.timeScale = 1f;
-        SceneManager.LoadScene("MainMenuTest"); // ใส่ชื่อ Scene เมนูของคุณ
+        Time.timeScale = 1f; // คืนค่าเวลา
+        SceneManager.LoadScene("MainMenuTest"); // **เช็คชื่อ Scene ให้ตรงกับไฟล์จริงของคุณ**
     }
 }

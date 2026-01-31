@@ -10792,21 +10792,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AnimalDatabase
   animals:
   - animalName: Horse
-    modelPrefab: {fileID: 3851015956068934394, guid: dfb23d60f30c46847ba7815aa09e2567, type: 3}
+    modelPrefab: {fileID: 3851015956068934394, guid: 739fdf694b1e62946abb835af1fabcac, type: 3}
     isUnlocked: 1
     tameDuration: 0
   - animalName: Deer
-    modelPrefab: {fileID: 7402009758359158996, guid: ef96eb51354533143b158449a97d89fd, type: 3}
-    isUnlocked: 0
-    tameDuration: 10
+    modelPrefab: {fileID: 7402009758359158996, guid: cadc70eae14c8ae478318a4de5f758eb, type: 3}
+    isUnlocked: 1
+    tameDuration: 5
   - animalName: Dog
-    modelPrefab: {fileID: 2629182449500102118, guid: 267eef46268ae0841be9e3c7fcede9a5, type: 3}
-    isUnlocked: 0
-    tameDuration: 50
+    modelPrefab: {fileID: 2629182449500102118, guid: a3b30ef42a6e57743aeb57003aea7f45, type: 3}
+    isUnlocked: 1
+    tameDuration: 5
   - animalName: Tiger
-    modelPrefab: {fileID: 5883155896844355918, guid: 59839445e1e27564ca50e474af9f50d5, type: 3}
-    isUnlocked: 0
-    tameDuration: 100
+    modelPrefab: {fileID: 5883155896844355918, guid: ea158193eb7145b4691f972b4edeb004, type: 3}
+    isUnlocked: 1
+    tameDuration: 5
 --- !u!4 &1599545617
 Transform:
   m_ObjectHideFlags: 0
