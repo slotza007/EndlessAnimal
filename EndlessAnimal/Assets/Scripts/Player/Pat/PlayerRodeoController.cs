@@ -7,6 +7,7 @@ public class PlayerRodeoController : MonoBehaviour
     public float strafeSpeed = 8f;
     public float jumpPower = 20f;
     public float extraGravity = 60f;
+    public float roadLimitX = 5f;
 
     [Header("Target System")]
     public float searchRadius = 8f;
@@ -65,13 +66,11 @@ public class PlayerRodeoController : MonoBehaviour
 
     void FixedUpdate()
     {
-        if (GameManager.Instance != null && !GameManager.Instance.isPlaying)
-            return;
-
         float horizontal = Input.GetAxis("Horizontal");
 
         if (isJumping)
         {
+            // --- โหมดลอยตัว ---
             verticalVelocity -= extraGravity * Time.fixedDeltaTime;
 
             Vector3 targetVel = new Vector3(
@@ -80,16 +79,30 @@ public class PlayerRodeoController : MonoBehaviour
                 forwardSpeed
             );
 
-            // ❗ ใช้ velocity (ไม่ใช่ linearVelocity)
-            rb.velocity = targetVel;
+            rb.linearVelocity = targetVel;
+
+            // [เพิ่ม] ล็อคตำแหน่งคน ไม่ให้หลุดขอบตอนลอย
+            Vector3 currentPos = transform.position;
+            currentPos.x = Mathf.Clamp(currentPos.x, -roadLimitX, roadLimitX);
+            transform.position = currentPos;
 
             FindTargetAnimal();
         }
         else if (currentAnimal != null)
         {
-            Vector3 move = new Vector3(horizontal * strafeSpeed, 0, forwardSpeed)
-                           * Time.fixedDeltaTime;
+            // --- โหมดขี่สัตว์ ---
+            Vector3 move = new Vector3(horizontal * strafeSpeed, 0, forwardSpeed) * Time.fixedDeltaTime;
+
+            // สั่งขยับ
             currentAnimal.transform.Translate(move);
+
+            // [เพิ่ม] ล็อคตำแหน่งสัตว์ ไม่ให้วิ่งหลุดขอบ
+            Vector3 animalPos = currentAnimal.transform.position;
+
+            // คำสั่ง Clamp จะล็อคค่าให้อยู่ระหว่าง min กับ max เสมอ
+            animalPos.x = Mathf.Clamp(animalPos.x, -roadLimitX, roadLimitX);
+
+            currentAnimal.transform.position = animalPos;
         }
     }
 
@@ -125,7 +138,7 @@ public class PlayerRodeoController : MonoBehaviour
         if (anim != null) anim.SetBool("isJumping", false);
         if (targetIndicator != null) targetIndicator.SetActive(false);
 
-        rb.velocity = Vector3.zero;
+        rb.linearVelocity = Vector3.zero;
         rb.isKinematic = true;
 
         transform.position = newAnimal.mountPoint.position;
