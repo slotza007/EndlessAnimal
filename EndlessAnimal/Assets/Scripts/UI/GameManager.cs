@@ -1,42 +1,64 @@
 using UnityEngine;
-using UnityEngine.SceneManagement; // จำเป็นสำหรับการเปลี่ยนฉาก
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
-    [Header("UI References")]
-    public GameObject gameOverUI; // ลาก GameOverPanel มาใส่ตรงนี้
+    public static GameManager Instance;
 
-    // ฟังก์ชันนี้จะถูกเรียกเมื่อผู้เล่นชน
+    [Header("UI References")]
+    public GameObject gameOverUI;
+
+    [Header("Game Data")]
+    public float distance;
+    public bool isPlaying;
+
+    void Awake()
+    {
+        // ทำให้ GameManager เข้าถึงได้จากทุก Script
+        if (Instance == null)
+            Instance = this;
+        else
+            Destroy(gameObject);
+    }
+
+    void Start()
+    {
+        distance = 0f;
+        isPlaying = true;
+    }
+
+    void Update()
+    {
+        if (!isPlaying) return;
+
+        // นับระยะทาง (ปรับเลข 5f ได้)
+        distance += Time.deltaTime * 5f;
+    }
+
+    // ถูกเรียกเมื่อตาย
     public void GameOver()
     {
         Debug.Log("Game Over Triggered!");
 
-        // 1. เปิดหน้า UI
-        if (gameOverUI != null)
-        {
-            gameOverUI.SetActive(true);
-        }
+        isPlaying = false;
 
-        // 2. หยุดเวลา (หยุดทุกอย่างในเกม)
+        if (gameOverUI != null)
+            gameOverUI.SetActive(true);
+
         Time.timeScale = 0f;
     }
 
-    // ฟังก์ชันสำหรับปุ่ม Restart
+    // ปุ่ม Restart
     public void RestartGame()
     {
-        // คืนค่าเวลากลับมาปกติก่อน (ไม่งั้นเริ่มเกมใหม่จะค้าง)
         Time.timeScale = 1f;
-
-        // โหลด Scene ปัจจุบันใหม่
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
-    // ฟังก์ชันสำหรับปุ่ม Menu
+    // ปุ่ม Menu
     public void GoToMenu()
     {
         Time.timeScale = 1f;
-
-        // ใส่ชื่อ Scene เมนูของคุณ (ต้องตรงเป๊ะ)
         SceneManager.LoadScene("MainMenuTest");
     }
 }
