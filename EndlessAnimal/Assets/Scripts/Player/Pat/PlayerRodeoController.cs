@@ -30,6 +30,11 @@ public class PlayerRodeoController : MonoBehaviour
     [Header("Animation")]
     public Animator anim;
 
+    [Header("Rodeo Animation (New!)")]
+    public float bounceSpeed = 18f;  // ความเร็วยิกๆ ในการเด้ง (ปรับให้เข้ากับเท้าสัตว์)
+    public float bounceHeight = 0.15f; // ความสูงในการเด้ง
+    public float tiltAmount = 25f;   // องศาการเอียงตัวเวลาเลี้ยว
+
     void Start()
     {
         rb = GetComponent<Rigidbody>();
@@ -110,8 +115,23 @@ public class PlayerRodeoController : MonoBehaviour
     {
         if (!isJumping && currentAnimal != null)
         {
-            transform.position = currentAnimal.mountPoint.position;
-            transform.rotation = currentAnimal.mountPoint.rotation;
+            // 1. คำนวณการเด้ง (Bouncing) - ใช้ Sine Wave
+            // Mathf.Abs เพื่อให้เด้งขึ้นอย่างเดียว (เหมือนก้นกระแทกเบาะ) หรือเอาออกถ้าอยากให้เด้งขึ้นลง
+            float bounceY = Mathf.Sin(Time.time * bounceSpeed) * bounceHeight;
+
+            // เอาตำแหน่งเด้ง ไปบวกเพิ่มจากจุดเกาะเดิม
+            Vector3 finalPosition = currentAnimal.mountPoint.position + new Vector3(0, bounceY, 0);
+            transform.position = finalPosition;
+
+            // 2. คำนวณการเอียงตัว (Tilting) - ตามปุ่ม A/D
+            float horizontal = Input.GetAxis("Horizontal");
+
+            // คำนวณมุมเอียง (หมุนแกน Z)
+            // เครื่องหมายลบ (-) เพื่อให้เอียงไปถูกทาง (กดขวาเอียงขวา)
+            Quaternion tiltRotation = Quaternion.Euler(0, 0, -horizontal * tiltAmount);
+
+            // เอาการหมุนของสัตว์ ผสมกับ การเอียงของเรา
+            transform.rotation = currentAnimal.mountPoint.rotation * tiltRotation;
         }
     }
 
