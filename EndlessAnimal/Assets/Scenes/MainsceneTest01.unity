@@ -1557,7 +1557,7 @@ MonoBehaviour:
   jumpPower: 20
   extraGravity: 60
   roadLimitX: 7
-  maxRideTime: 5
+  maxRideTime: 10
   bounceSpeed: 18
   bounceHeight: 0.15
   tiltAmount: 5
