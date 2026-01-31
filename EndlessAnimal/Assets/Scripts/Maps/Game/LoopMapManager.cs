@@ -17,6 +17,9 @@ public class LoopMapManager : MonoBehaviour
     private GameObject lastSpawnedPrefab;
     private Queue<GameObject> spawnedSections = new Queue<GameObject>();
 
+    // 👉 ตัวแปรใหม่: ใช้เช็ค section แรก
+    private bool isFirstSection = true;
+
     void Start()
     {
         nextSpawnZ = 0f;
@@ -43,7 +46,18 @@ public class LoopMapManager : MonoBehaviour
 
     void SpawnSection()
     {
-        GameObject prefab = GetRandomPrefab();
+        GameObject prefab;
+
+        // 👉 section แรก fix เป็น Map01 (Element 0)
+        if (isFirstSection)
+        {
+            prefab = sectionPrefabs[0];
+            isFirstSection = false;
+        }
+        else
+        {
+            prefab = GetRandomPrefab();
+        }
 
         GameObject section = Instantiate(
             prefab,
