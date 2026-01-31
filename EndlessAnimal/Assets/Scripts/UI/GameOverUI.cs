@@ -1,72 +1,87 @@
 using UnityEngine;
-using TMPro;
+using TMPro; // จำเป็นสำหรับการใช้ TextMeshPro
 
 public class GameOverUI : MonoBehaviour
 {
     [Header("UI Components")]
     public GameObject panel;
-    public TextMeshProUGUI distanceText;
+    public TextMeshProUGUI distanceText; // คะแนนรอบนี้
+    public TextMeshProUGUI bestScoreText; // [เพิ่ม] คะแนนสูงสุด
 
     [Header("External UI")]
-    public GameObject hudPanel; // เอาไว้ปิด HUD ตอนจบเกม
+    public GameObject hudPanel; // หน้าจอ HUD ตอนเล่น (เอาไว้สั่งปิด)
 
     void Start()
     {
-        // ซ่อน Panel ตอนเริ่มเสมอ
-        panel.SetActive(false);
+        panel.SetActive(false); // ซ่อนตัวเองตอนเริ่มเกม
 
-        // วิ่งไปขอฟังข่าวจาก GameManager ว่า "ถ้าจบเกม ให้เรียกฟังก์ชัน Show นะ"
+        // รอฟัง Event จาก GameManager ว่าจบเกมหรือยัง
         if (GameManager.Instance != null)
         {
             GameManager.Instance.OnGameOver += Show;
         }
     }
 
-    // สำคัญ: ต้องยกเลิกการฟังเมื่อหน้านี้ถูกทำลาย (กัน error)
     void OnDestroy()
     {
+        // เลิกฟังเมื่อ object ถูกทำลาย (กัน error)
         if (GameManager.Instance != null)
         {
             GameManager.Instance.OnGameOver -= Show;
         }
     }
 
-    // ฟังก์ชันนี้จะทำงานเองเมื่อ GameManager ตะโกนบอก
+    // ฟังก์ชันนี้ทำงานเมื่อจบเกม
     public void Show()
     {
+        // 1. เปิดหน้าจอ Game Over
         panel.SetActive(true);
 
-        // ปิด HUD (ตัวบอกระยะทางตอนวิ่ง)
+        // 2. ปิดหน้าจอ HUD (ระยะทางวิ่ง)
         if (hudPanel != null)
         {
             hudPanel.SetActive(false);
         }
 
-        // แสดงคะแนน
+        // 3. ระบบคำนวณคะแนน
         if (GameManager.Instance != null)
         {
-            int score = Mathf.FloorToInt(GameManager.Instance.distance);
-            distanceText.text = "Distance : " + score + "m";
+            // ดึงระยะทางวิ่งมาจาก GameManager (ปัดเศษทิ้ง)
+            int currentScore = Mathf.FloorToInt(GameManager.Instance.distance);
 
-            // (Optional) โค้ดส่วน Best Score ที่เคยคุยกันสามารถใส่เพิ่มตรงนี้ได้
+            // ดึงคะแนนสูงสุดที่เคยทำได้ (ถ้าไม่มีให้เป็น 0)
+            int oldBestScore = PlayerPrefs.GetInt("BestScore", 0);
+
+            // ตรวจสอบว่าทำลายสถิติไหม?
+            if (currentScore > oldBestScore)
+            {
+                // บันทึกสถิติใหม่ลงเครื่อง
+                PlayerPrefs.SetInt("BestScore", currentScore);
+                PlayerPrefs.Save(); // สั่ง save ทันที
+
+                // อัปเดตตัวแปรเพื่อโชว์ค่าใหม่
+                oldBestScore = currentScore;
+
+                // (Optional) อาจจะใส่ Effect ข้อความ "NEW RECORD!" ตรงนี้
+            }
+
+            // 4. แสดงผลบนหน้าจอ
+            distanceText.text = "Distance: " + currentScore + "m";
+
+            if (bestScoreText != null)
+            {
+                bestScoreText.text = "Best: " + oldBestScore + "m";
+            }
         }
     }
 
-    // ปุ่มกด Restart
     public void OnRestartButton()
     {
-        if (GameManager.Instance != null)
-        {
-            GameManager.Instance.RestartGame();
-        }
+        if (GameManager.Instance != null) GameManager.Instance.RestartGame();
     }
 
-    // ปุ่มกดกลับเมนู
     public void OnMenuButton()
     {
-        if (GameManager.Instance != null)
-        {
-            GameManager.Instance.GoToMenu();
-        }
+        if (GameManager.Instance != null) GameManager.Instance.GoToMenu();
     }
 }
