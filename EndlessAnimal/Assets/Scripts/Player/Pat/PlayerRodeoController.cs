@@ -7,6 +7,7 @@ public class PlayerRodeoController : MonoBehaviour
     public float strafeSpeed = 8f;
     public float jumpPower = 20f;
     public float extraGravity = 60f;
+    public float roadLimitX = 5f;
 
     [Header("Target System")]
     public float searchRadius = 8f;
@@ -28,6 +29,11 @@ public class PlayerRodeoController : MonoBehaviour
 
     [Header("Animation")]
     public Animator anim;
+
+    [Header("Rodeo Animation (New!)")]
+    public float bounceSpeed = 18f;  // ความเร็วยิกๆ ในการเด้ง (ปรับให้เข้ากับเท้าสัตว์)
+    public float bounceHeight = 0.15f; // ความสูงในการเด้ง
+    public float tiltAmount = 25f;   // องศาการเอียงตัวเวลาเลี้ยว
 
     void Start()
     {
@@ -65,13 +71,11 @@ public class PlayerRodeoController : MonoBehaviour
 
     void FixedUpdate()
     {
-        if (GameManager.Instance != null && !GameManager.Instance.isPlaying)
-            return;
-
         float horizontal = Input.GetAxis("Horizontal");
 
         if (isJumping)
         {
+            // --- โหมดลอยตัว ---
             verticalVelocity -= extraGravity * Time.fixedDeltaTime;
 
             Vector3 targetVel = new Vector3(
@@ -80,16 +84,30 @@ public class PlayerRodeoController : MonoBehaviour
                 forwardSpeed
             );
 
-            // ❗ ใช้ velocity (ไม่ใช่ linearVelocity)
-            rb.velocity = targetVel;
+            rb.linearVelocity = targetVel;
+
+            // [เพิ่ม] ล็อคตำแหน่งคน ไม่ให้หลุดขอบตอนลอย
+            Vector3 currentPos = transform.position;
+            currentPos.x = Mathf.Clamp(currentPos.x, -roadLimitX, roadLimitX);
+            transform.position = currentPos;
 
             FindTargetAnimal();
         }
         else if (currentAnimal != null)
         {
-            Vector3 move = new Vector3(horizontal * strafeSpeed, 0, forwardSpeed)
-                           * Time.fixedDeltaTime;
+            // --- โหมดขี่สัตว์ ---
+            Vector3 move = new Vector3(horizontal * strafeSpeed, 0, forwardSpeed) * Time.fixedDeltaTime;
+
+            // สั่งขยับ
             currentAnimal.transform.Translate(move);
+
+            // [เพิ่ม] ล็อคตำแหน่งสัตว์ ไม่ให้วิ่งหลุดขอบ
+            Vector3 animalPos = currentAnimal.transform.position;
+
+            // คำสั่ง Clamp จะล็อคค่าให้อยู่ระหว่าง min กับ max เสมอ
+            animalPos.x = Mathf.Clamp(animalPos.x, -roadLimitX, roadLimitX);
+
+            currentAnimal.transform.position = animalPos;
         }
     }
 
@@ -97,8 +115,23 @@ public class PlayerRodeoController : MonoBehaviour
     {
         if (!isJumping && currentAnimal != null)
         {
-            transform.position = currentAnimal.mountPoint.position;
-            transform.rotation = currentAnimal.mountPoint.rotation;
+            // 1. คำนวณการเด้ง (Bouncing) - ใช้ Sine Wave
+            // Mathf.Abs เพื่อให้เด้งขึ้นอย่างเดียว (เหมือนก้นกระแทกเบาะ) หรือเอาออกถ้าอยากให้เด้งขึ้นลง
+            float bounceY = Mathf.Sin(Time.time * bounceSpeed) * bounceHeight;
+
+            // เอาตำแหน่งเด้ง ไปบวกเพิ่มจากจุดเกาะเดิม
+            Vector3 finalPosition = currentAnimal.mountPoint.position + new Vector3(0, bounceY, 0);
+            transform.position = finalPosition;
+
+            // 2. คำนวณการเอียงตัว (Tilting) - ตามปุ่ม A/D
+            float horizontal = Input.GetAxis("Horizontal");
+
+            // คำนวณมุมเอียง (หมุนแกน Z)
+            // เครื่องหมายลบ (-) เพื่อให้เอียงไปถูกทาง (กดขวาเอียงขวา)
+            Quaternion tiltRotation = Quaternion.Euler(0, 0, -horizontal * tiltAmount);
+
+            // เอาการหมุนของสัตว์ ผสมกับ การเอียงของเรา
+            transform.rotation = currentAnimal.mountPoint.rotation * tiltRotation;
         }
     }
 
@@ -125,7 +158,7 @@ public class PlayerRodeoController : MonoBehaviour
         if (anim != null) anim.SetBool("isJumping", false);
         if (targetIndicator != null) targetIndicator.SetActive(false);
 
-        rb.velocity = Vector3.zero;
+        rb.linearVelocity = Vector3.zero;
         rb.isKinematic = true;
 
         transform.position = newAnimal.mountPoint.position;
