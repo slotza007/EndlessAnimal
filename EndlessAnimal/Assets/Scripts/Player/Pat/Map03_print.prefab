@@ -49,7 +49,7 @@ MonoBehaviour:
   - {fileID: 2629182449500102118, guid: a3b30ef42a6e57743aeb57003aea7f45, type: 3}
   - {fileID: 3851015956068934394, guid: 739fdf694b1e62946abb835af1fabcac, type: 3}
   - {fileID: 5883155896844355918, guid: ea158193eb7145b4691f972b4edeb004, type: 3}
-  spawnRangeX: 7
+  spawnRangeX: 6
   spawnRangeZ: 5
   animalCount: 5
 --- !u!1 &1447828660284768903
