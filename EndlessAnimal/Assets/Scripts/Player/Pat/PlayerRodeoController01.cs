@@ -31,9 +31,11 @@ public class PlayerRodeoController01 : MonoBehaviour
     public Animator anim;
 
     [Header("Audio Settings")]
-    public AudioSource audioSource;    // ลาก AudioSource มาใส่ใน Inspector
-    public AudioClip jumpSound;        // ไฟล์เสียงตอนกระโดด
-    public AudioClip runningSound;     // ไฟล์เสียงตอนวิ่ง
+    public AudioSource audioSource;
+    public AudioClip jumpSound;
+    [Range(0f, 1f)] public float jumpVolume = 1f;    // ปรับความดังเสียงกระโดดได้ที่นี่
+    public AudioClip runningSound;
+    [Range(0f, 1f)] public float runningVolume = 0.5f; // ปรับความดังเสียงวิ่งได้ที่นี่
 
     // State Variables
     private bool isJumping = false;
@@ -83,25 +85,22 @@ public class PlayerRodeoController01 : MonoBehaviour
 
     void Update()
     {
-        // 1. ตรวจสอบว่าเกมกำลังเล่นอยู่หรือไม่ ถ้าไม่ให้หยุดเสียงทั้งหมด
         if (GameManager.Instance != null && !GameManager.Instance.isPlaying)
         {
             StopRunningSound();
             return;
         }
 
-        // --- 2. ระบบจัดการเสียงวิ่งและตัวจับเวลาตอนขี่ ---
         if (!isJumping && currentAnimal != null)
         {
-            // เล่นเสียงวิ่ง (เฉพาะเมื่อไม่ได้เล่นอยู่ และต้องเป็นไฟล์เสียงวิ่งเท่านั้น)
             if (audioSource != null && !audioSource.isPlaying && runningSound != null)
             {
                 audioSource.clip = runningSound;
-                audioSource.loop = true; // ตั้งให้วนลูปขณะวิ่ง
+                audioSource.loop = true;
+                audioSource.volume = runningVolume; // ใช้ค่าจาก Inspector
                 audioSource.Play();
             }
 
-            // ระบบจับเวลาดีดตัว (Code เดิมของคุณ)
             currentRideTimer += Time.deltaTime;
             bounceHeight = (currentRideTimer > maxRideTime * 0.7f) ? 0.3f : 0.15f;
 
@@ -109,17 +108,13 @@ public class PlayerRodeoController01 : MonoBehaviour
         }
         else
         {
-            // --- 3. การหยุดเสียงวิ่งเมื่อกระโดด ---
-            // ตรวจสอบว่าถ้ากำลังเล่น "เสียงวิ่ง" อยู่ ให้หยุด
-            // เพิ่มการเช็ค audioSource.clip == runningSound เพื่อไม่ให้ไปสั่ง Stop เสียงกระโดดที่เล่นแบบ PlayOneShot
             if (audioSource != null && audioSource.isPlaying && audioSource.clip == runningSound)
             {
                 audioSource.Stop();
-                audioSource.clip = null; // ล้างค่า clip เพื่อป้องกันการสั่ง Stop ซ้ำในเฟรมถัดไปขณะลอยตัว
+                audioSource.clip = null;
             }
         }
 
-        // 4. การรับ Input (Code เดิมของคุณ)
         if (Input.GetKeyDown(KeyCode.Space) && !isJumping) JumpOff();
         if (isJumping && Input.GetKeyDown(KeyCode.E) && targetAnimal != null) MountAnimal(targetAnimal);
 
@@ -173,13 +168,11 @@ public class PlayerRodeoController01 : MonoBehaviour
 
     void JumpOff()
     {
-        // 1. เล่นเสียงกระโดดทันที (ใช้ PlayOneShot เพื่อให้เล่นซ้อนกับเสียงอื่นได้)
         if (audioSource != null && jumpSound != null)
         {
-            audioSource.PlayOneShot(jumpSound);
+            audioSource.PlayOneShot(jumpSound, jumpVolume); // ใช้ค่าความดังจาก Inspector
         }
 
-        // 2. ล้างคลิปเสียงวิ่งทิ้ง เพื่อป้องกันเงื่อนไขใน Update มาสั่ง Stop เสียงกระโดด
         if (audioSource != null)
         {
             audioSource.clip = null;
@@ -187,7 +180,6 @@ public class PlayerRodeoController01 : MonoBehaviour
 
         isJumping = true;
 
-        // ส่วนการทำงานเดิมของคุณ
         if (currentAnimal != null) currentAnimal.SetRidden(false);
         currentAnimal = null;
         targetAnimal = null;
@@ -217,7 +209,6 @@ public class PlayerRodeoController01 : MonoBehaviour
         transform.position = newAnimal.mountPoint.position;
         transform.rotation = newAnimal.mountPoint.rotation;
 
-        // ระบบนับจำนวนเพื่อปลดล็อก
         if (AnimalDatabase.Instance != null)
         {
             int id = newAnimal.animalID;

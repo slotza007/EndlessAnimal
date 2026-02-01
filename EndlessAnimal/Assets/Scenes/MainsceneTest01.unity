@@ -1570,7 +1570,7 @@ AudioSource:
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 8300000, guid: df8783eb0c525544cbd933f2c6ea31f6, type: 3}
   m_PlayOnAwake: 1
-  m_Volume: 0.05
+  m_Volume: 0.02
   m_Pitch: 1
   Loop: 0
   Mute: 0
@@ -1831,8 +1831,10 @@ MonoBehaviour:
   debugStartingAnimal: {fileID: 0}
   anim: {fileID: 1748906646}
   audioSource: {fileID: 1748906651}
-  jumpSound: {fileID: 8300000, guid: 5adb37356a3c5e144839571fbb59838d, type: 3}
+  jumpSound: {fileID: 8300000, guid: a8a0cde7df471514cba5d8f433ff7d7b, type: 3}
+  jumpVolume: 0.4
   runningSound: {fileID: 8300000, guid: d5a9e794a5218164e938522fdbcd1784, type: 3}
+  runningVolume: 0.2
 --- !u!82 &1748906651
 AudioSource:
   m_ObjectHideFlags: 0
