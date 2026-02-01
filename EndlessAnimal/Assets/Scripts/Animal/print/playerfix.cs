@@ -1,7 +1,7 @@
 using UnityEngine;
-using System.Collections.Generic;
+using System.Collections.Generic; // [เพิ่ม] จำเป็นสำหรับการใช้ Dictionary
 
-public class PlayerRodeoController01 : MonoBehaviour
+public class playerfix : MonoBehaviour
 {
     [Header("Movement Settings")]
     public float forwardSpeed = 10f;
@@ -11,7 +11,7 @@ public class PlayerRodeoController01 : MonoBehaviour
     public float roadLimitX = 5f;
 
     [Header("Game Mechanics")]
-    public float maxRideTime = 5f;
+    public float maxRideTime = 5f; // ยังคงใช้ดีดตัวผู้เล่นออก (Bucking)
 
     [Header("Rodeo Animation")]
     public float bounceSpeed = 18f;
@@ -30,11 +30,6 @@ public class PlayerRodeoController01 : MonoBehaviour
     [Header("Animation")]
     public Animator anim;
 
-    [Header("Audio Settings")]
-    public AudioSource audioSource;    // ลาก AudioSource มาใส่ใน Inspector
-    public AudioClip jumpSound;        // ไฟล์เสียงตอนกระโดด
-    public AudioClip runningSound;     // ไฟล์เสียงตอนวิ่ง
-
     // State Variables
     private bool isJumping = false;
     private Rideable01 currentAnimal;
@@ -42,6 +37,8 @@ public class PlayerRodeoController01 : MonoBehaviour
     private Rigidbody rb;
     private float verticalVelocity = 0f;
     private float currentRideTimer = 0f;
+
+    // [เพิ่ม] สมุดจดบันทึกจำนวนสัตว์ที่ขี่ในรอบนี้ (Key=ID, Value=จำนวน)
     private Dictionary<int, int> sessionRideCounts = new Dictionary<int, int>();
 
     void Start()
@@ -50,8 +47,7 @@ public class PlayerRodeoController01 : MonoBehaviour
         rb.useGravity = false;
         rb.constraints = RigidbodyConstraints.FreezeRotation;
 
-        if (audioSource != null) audioSource.playOnAwake = false;
-
+        // ระบบเสกสัตว์ตามที่เลือกมา (ถ้ามี Database)
         SpawnSelectedAnimal();
     }
 
@@ -72,74 +68,56 @@ public class PlayerRodeoController01 : MonoBehaviour
                 }
             }
         }
-        else if (debugStartingAnimal != null)
+        else
         {
-            animalToRide = debugStartingAnimal;
+            if (debugStartingAnimal != null) animalToRide = debugStartingAnimal;
         }
 
-        if (animalToRide != null) MountAnimal(animalToRide);
-        else JumpOff();
+        if (animalToRide != null)
+        {
+            MountAnimal(animalToRide);
+        }
+        else
+        {
+            JumpOff();
+        }
     }
 
     void Update()
     {
-        // 1. ตรวจสอบว่าเกมกำลังเล่นอยู่หรือไม่ ถ้าไม่ให้หยุดเสียงทั้งหมด
-        if (GameManager.Instance != null && !GameManager.Instance.isPlaying)
-        {
-            StopRunningSound();
-            return;
-        }
+        if (GameManager.Instance != null && !GameManager.Instance.isPlaying) return;
 
-        // --- 2. ระบบจัดการเสียงวิ่งและตัวจับเวลาตอนขี่ ---
-        if (!isJumping && currentAnimal != null)
-        {
-            // เล่นเสียงวิ่ง (เฉพาะเมื่อไม่ได้เล่นอยู่ และต้องเป็นไฟล์เสียงวิ่งเท่านั้น)
-            if (audioSource != null && !audioSource.isPlaying && runningSound != null)
-            {
-                audioSource.clip = runningSound;
-                audioSource.loop = true; // ตั้งให้วนลูปขณะวิ่ง
-                audioSource.Play();
-            }
-
-            // ระบบจับเวลาดีดตัว (Code เดิมของคุณ)
-            currentRideTimer += Time.deltaTime;
-            bounceHeight = (currentRideTimer > maxRideTime * 0.7f) ? 0.3f : 0.15f;
-
-            if (currentRideTimer >= maxRideTime) JumpOff();
-        }
-        else
-        {
-            // --- 3. การหยุดเสียงวิ่งเมื่อกระโดด ---
-            // ตรวจสอบว่าถ้ากำลังเล่น "เสียงวิ่ง" อยู่ ให้หยุด
-            // เพิ่มการเช็ค audioSource.clip == runningSound เพื่อไม่ให้ไปสั่ง Stop เสียงกระโดดที่เล่นแบบ PlayOneShot
-            if (audioSource != null && audioSource.isPlaying && audioSource.clip == runningSound)
-            {
-                audioSource.Stop();
-                audioSource.clip = null; // ล้างค่า clip เพื่อป้องกันการสั่ง Stop ซ้ำในเฟรมถัดไปขณะลอยตัว
-            }
-        }
-
-        // 4. การรับ Input (Code เดิมของคุณ)
+        // กด Space เพื่อกระโดดเอง
         if (Input.GetKeyDown(KeyCode.Space) && !isJumping) JumpOff();
+
+        // กด E เพื่อขี่ตัวใหม่ (ตอนลอยอยู่)
         if (isJumping && Input.GetKeyDown(KeyCode.E) && targetAnimal != null) MountAnimal(targetAnimal);
 
+        // ตอนขี่อยู่: นับเวลาถอยหลังเพื่อดีดตัว
+        if (!isJumping && currentAnimal != null)
+        {
+            currentRideTimer += Time.deltaTime;
+
+            // เพิ่มความเด้งตอนใกล้หมดเวลาเตือนผู้เล่น
+            bounceHeight = (currentRideTimer > maxRideTime * 0.7f) ? 0.3f : 0.15f;
+
+            // ครบเวลา -> ดีดตัวออกอัตโนมัติ (สัตว์พยศ)
+            if (currentRideTimer >= maxRideTime) JumpOff();
+        }
         HandleIndicator();
     }
 
     void FixedUpdate()
     {
-        if (GameManager.Instance != null && !GameManager.Instance.isPlaying)
-        {
-            rb.linearVelocity = Vector3.zero;
-            return;
-        }
+        if (GameManager.Instance != null && !GameManager.Instance.isPlaying) { rb.linearVelocity = Vector3.zero; return; }
 
         float horizontal = Input.GetAxis("Horizontal");
 
         if (isJumping)
         {
             verticalVelocity -= extraGravity * Time.fixedDeltaTime;
-            rb.linearVelocity = new Vector3(horizontal * strafeSpeed, verticalVelocity, forwardSpeed);
+            Vector3 targetVel = new Vector3(horizontal * strafeSpeed, verticalVelocity, forwardSpeed);
+            rb.linearVelocity = targetVel;
 
             Vector3 currentPos = transform.position;
             currentPos.x = Mathf.Clamp(currentPos.x, -roadLimitX, roadLimitX);
@@ -163,7 +141,8 @@ public class PlayerRodeoController01 : MonoBehaviour
         if (!isJumping && currentAnimal != null)
         {
             float bounceY = Mathf.Sin(Time.time * bounceSpeed) * bounceHeight;
-            transform.position = currentAnimal.mountPoint.position + new Vector3(0, bounceY, 0);
+            Vector3 finalPosition = currentAnimal.mountPoint.position + new Vector3(0, bounceY, 0);
+            transform.position = finalPosition;
 
             float horizontal = Input.GetAxis("Horizontal");
             Quaternion tiltRotation = Quaternion.Euler(0, 0, -horizontal * tiltAmount);
@@ -173,35 +152,17 @@ public class PlayerRodeoController01 : MonoBehaviour
 
     void JumpOff()
     {
-        // 1. เล่นเสียงกระโดดทันที (ใช้ PlayOneShot เพื่อให้เล่นซ้อนกับเสียงอื่นได้)
-        if (audioSource != null && jumpSound != null)
-        {
-            audioSource.PlayOneShot(jumpSound);
-        }
-
-        // 2. ล้างคลิปเสียงวิ่งทิ้ง เพื่อป้องกันเงื่อนไขใน Update มาสั่ง Stop เสียงกระโดด
-        if (audioSource != null)
-        {
-            audioSource.clip = null;
-        }
-
         isJumping = true;
-
-        // ส่วนการทำงานเดิมของคุณ
         if (currentAnimal != null) currentAnimal.SetRidden(false);
         currentAnimal = null;
         targetAnimal = null;
-
         if (anim != null) anim.SetBool("isJumping", true);
-
         rb.isKinematic = false;
         verticalVelocity = jumpPower;
     }
 
     void MountAnimal(Rideable01 newAnimal)
     {
-        if (audioSource != null) audioSource.Stop();
-
         isJumping = false;
         currentAnimal = newAnimal;
         targetAnimal = null;
@@ -217,16 +178,28 @@ public class PlayerRodeoController01 : MonoBehaviour
         transform.position = newAnimal.mountPoint.position;
         transform.rotation = newAnimal.mountPoint.rotation;
 
-        // ระบบนับจำนวนเพื่อปลดล็อก
+        // --- [แก้ไข] ระบบนับจำนวนเพื่อปลดล็อก ---
         if (AnimalDatabase.Instance != null)
         {
             int id = newAnimal.animalID;
-            if (!sessionRideCounts.ContainsKey(id)) sessionRideCounts[id] = 0;
+
+            // 1. เพิ่มจำนวนการขี่
+            if (!sessionRideCounts.ContainsKey(id))
+            {
+                sessionRideCounts[id] = 0;
+            }
             sessionRideCounts[id]++;
 
+            Debug.Log($"ขี่ตัว ID {id} ไปแล้ว {sessionRideCounts[id]} ตัว");
+
+            // 2. เช็คว่าครบกำหนดหรือยัง
+            // ตรวจสอบ Index เพื่อป้องกัน Error กรณี ID เกิน Database
             if (id >= 0 && id < AnimalDatabase.Instance.animals.Length)
             {
-                if (sessionRideCounts[id] >= AnimalDatabase.Instance.animals[id].requiredAmount)
+                int required = AnimalDatabase.Instance.animals[id].requiredAmount;
+
+                // ถ้าขี่ครบตามจำนวนที่กำหนด ให้ปลดล็อก
+                if (sessionRideCounts[id] >= required)
                 {
                     AnimalDatabase.Instance.UnlockAnimal(id);
                 }
@@ -261,11 +234,6 @@ public class PlayerRodeoController01 : MonoBehaviour
             targetIndicator.transform.position = new Vector3(pos.x, indicatorHeight, pos.z);
         }
         else targetIndicator.SetActive(false);
-    }
-
-    void StopRunningSound()
-    {
-        if (audioSource != null && audioSource.isPlaying) audioSource.Stop();
     }
 
     void OnCollisionEnter(Collision collision)
