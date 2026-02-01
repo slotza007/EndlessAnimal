@@ -470,6 +470,26 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 261818905}
   m_CullTransparentMesh: 1
+--- !u!1 &315288657 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7837655942159599279, guid: ade6293d29092124e8e9168df34a471a, type: 3}
+  m_PrefabInstance: {fileID: 850408525}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &315288659
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 315288657}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 191bd55733fbc9145a0080b893ad3d1b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CameraFollow01
+  target: {fileID: 0}
+  smoothSpeed: 0.125
+  offset: {x: 0, y: 0, z: 0}
 --- !u!1001 &412012402
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1045,6 +1065,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 8415916782061011133, guid: ade6293d29092124e8e9168df34a471a, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1748906651}
+    - targetCorrespondingSourceObject: {fileID: 7837655942159599279, guid: ade6293d29092124e8e9168df34a471a, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 315288659}
   m_SourcePrefab: {fileID: 100100000, guid: ade6293d29092124e8e9168df34a471a, type: 3}
 --- !u!1 &909361696
 GameObject:
@@ -1570,7 +1593,7 @@ AudioSource:
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 8300000, guid: df8783eb0c525544cbd933f2c6ea31f6, type: 3}
   m_PlayOnAwake: 1
-  m_Volume: 0.02
+  m_Volume: 0.01
   m_Pitch: 1
   Loop: 0
   Mute: 0
@@ -1813,16 +1836,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3f34a4e45504b894ca7596bfb5b2c42a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerRodeoController01
-  forwardSpeed: 10
-  strafeSpeed: 8
+  forwardSpeed: 8
+  strafeSpeed: 6
   jumpPower: 20
   extraGravity: 60
   roadLimitX: 7
-  maxRideTime: 10
+  maxRideTime: 14
   bounceSpeed: 18
   bounceHeight: 0.15
   tiltAmount: 5
+  mountDuration: 0.15
   searchRadius: 8
+  viewAngle: 90
   animalLayer:
     serializedVersion: 2
     m_Bits: 64
@@ -1831,10 +1856,10 @@ MonoBehaviour:
   debugStartingAnimal: {fileID: 0}
   anim: {fileID: 1748906646}
   audioSource: {fileID: 1748906651}
-  jumpSound: {fileID: 8300000, guid: a8a0cde7df471514cba5d8f433ff7d7b, type: 3}
-  jumpVolume: 0.4
+  jumpSound: {fileID: 8300000, guid: 6cfd9d5a36a5a2d49ae0f15bd2d813f3, type: 3}
+  jumpVolume: 1
   runningSound: {fileID: 8300000, guid: d5a9e794a5218164e938522fdbcd1784, type: 3}
-  runningVolume: 0.2
+  runningVolume: 0.05
 --- !u!82 &1748906651
 AudioSource:
   m_ObjectHideFlags: 0

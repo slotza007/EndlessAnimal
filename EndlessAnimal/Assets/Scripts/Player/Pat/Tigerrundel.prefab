@@ -5954,8 +5954,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Rideable01
   animalID: 3
   mountPoint: {fileID: 4077557437356672362}
-  runSpeed: 5
-  lifeTime: 15
+  runSpeed: 7
+  lifeTime: 30
   isBeingRidden: 0
 --- !u!1 &6083925854692512673
 GameObject:

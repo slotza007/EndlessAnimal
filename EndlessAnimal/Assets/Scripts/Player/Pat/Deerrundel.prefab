@@ -6057,7 +6057,7 @@ MonoBehaviour:
   animalID: 1
   mountPoint: {fileID: 9144565752038170153}
   runSpeed: 5
-  lifeTime: 15
+  lifeTime: 30
   isBeingRidden: 0
 --- !u!1 &7500468941402322376
 GameObject:

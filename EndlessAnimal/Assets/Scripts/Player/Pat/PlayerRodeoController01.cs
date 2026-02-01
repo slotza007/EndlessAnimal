@@ -1,5 +1,5 @@
 using UnityEngine;
-using System.Collections; // จำเป็นสำหรับ IEnumerator
+using System.Collections;
 using System.Collections.Generic;
 
 public class PlayerRodeoController01 : MonoBehaviour
@@ -18,12 +18,11 @@ public class PlayerRodeoController01 : MonoBehaviour
     public float bounceSpeed = 18f;
     public float bounceHeight = 0.15f;
     public float tiltAmount = 25f;
-
-    // [เพิ่ม] ความเร็วในการพุ่งเข้าไปเกาะ (ยิ่งน้อยยิ่งเร็ว 0.1 - 0.2 กำลังดี)
     public float mountDuration = 0.15f;
 
-    [Header("Target System")]
+    [Header("Target System (Cone Detection)")]
     public float searchRadius = 8f;
+    [Range(0, 360)] public float viewAngle = 90f; // [เพิ่ม] องศาการมองเห็น (กรวย)
     public LayerMask animalLayer;
     public GameObject targetIndicator;
     public float indicatorHeight = 0.2f;
@@ -43,7 +42,7 @@ public class PlayerRodeoController01 : MonoBehaviour
 
     // State Variables
     private bool isJumping = false;
-    private bool isMounting = false; // [เพิ่ม] เช็คว่ากำลังพุ่งไปเกาะอยู่ไหม
+    private bool isMounting = false;
     private Rideable01 currentAnimal;
     private Rideable01 targetAnimal;
     private Rigidbody rb;
@@ -86,14 +85,9 @@ public class PlayerRodeoController01 : MonoBehaviour
         }
 
         if (animalToRide != null)
-        {
-            // ตัวแรกให้วาร์ปไปเลย (ไม่ต้องสมูท)
             MountAnimalImmediate(animalToRide);
-        }
         else
-        {
             JumpOff();
-        }
     }
 
     void Update()
@@ -104,10 +98,8 @@ public class PlayerRodeoController01 : MonoBehaviour
             return;
         }
 
-        // [แก้] เพิ่ม !isMounting เพื่อไม่ให้ทำงานตอนกำลังพุ่ง
         if (!isJumping && currentAnimal != null && !isMounting)
         {
-            // --- Audio Logic ---
             if (audioSource != null && !audioSource.isPlaying && runningSound != null)
             {
                 audioSource.clip = runningSound;
@@ -123,7 +115,6 @@ public class PlayerRodeoController01 : MonoBehaviour
         }
         else
         {
-            // ถ้ากระโดด หรือกำลังพุ่งเกาะ ให้หยุดเสียงวิ่ง
             if (audioSource != null && audioSource.isPlaying && audioSource.clip == runningSound)
             {
                 audioSource.Stop();
@@ -131,10 +122,8 @@ public class PlayerRodeoController01 : MonoBehaviour
             }
         }
 
-        // ห้ามกระโดดซ้ำตอนกำลังพุ่งเกาะ (!isMounting)
         if (Input.GetKeyDown(KeyCode.Space) && !isJumping && !isMounting) JumpOff();
 
-        // กด E เพื่อพุ่งเกาะ (เรียก Coroutine แทนฟังก์ชันปกติ)
         if (isJumping && Input.GetKeyDown(KeyCode.E) && targetAnimal != null)
         {
             StartCoroutine(SmoothMount(targetAnimal));
@@ -177,7 +166,6 @@ public class PlayerRodeoController01 : MonoBehaviour
 
     void LateUpdate()
     {
-        // [แก้] เพิ่ม !isMounting เพื่อไม่ให้มันตีกับ Coroutine ที่กำลังเลื่อนตำแหน่ง
         if (!isJumping && currentAnimal != null && !isMounting)
         {
             float bounceY = Mathf.Sin(Time.time * bounceSpeed) * bounceHeight;
@@ -191,18 +179,14 @@ public class PlayerRodeoController01 : MonoBehaviour
 
     void JumpOff()
     {
-        // --- Audio Logic ---
         if (audioSource != null && jumpSound != null)
         {
             audioSource.PlayOneShot(jumpSound, jumpVolume);
         }
-        if (audioSource != null)
-        {
-            audioSource.clip = null; // เคลียร์คลิปเสียงวิ่ง
-        }
+        if (audioSource != null) audioSource.clip = null;
 
         isJumping = true;
-        isMounting = false; // เผื่อกดโดดตอนกำลังปีน (safety)
+        isMounting = false;
 
         if (currentAnimal != null) currentAnimal.SetRidden(false);
         currentAnimal = null;
@@ -214,11 +198,10 @@ public class PlayerRodeoController01 : MonoBehaviour
         verticalVelocity = jumpPower;
     }
 
-    // --- [เพิ่มใหม่] ฟังก์ชันสำหรับทำให้การเกาะสมูท ---
     IEnumerator SmoothMount(Rideable01 newAnimal)
     {
         isJumping = false;
-        isMounting = true; // บอกระบบว่ากำลังปีน (ห้ามขยับอย่างอื่น)
+        isMounting = true;
 
         currentAnimal = newAnimal;
         targetAnimal = null;
@@ -229,9 +212,8 @@ public class PlayerRodeoController01 : MonoBehaviour
         rb.linearVelocity = Vector3.zero;
         rb.isKinematic = true;
 
-        newAnimal.SetRidden(true); // สั่งสัตว์ว่าถูกขี่แล้ว
+        newAnimal.SetRidden(true);
 
-        // --- ช่วงเวลาแห่งการ Lerp (เคลื่อนที่สมูท) ---
         float timer = 0f;
         Vector3 startPos = transform.position;
         Quaternion startRot = transform.rotation;
@@ -241,19 +223,16 @@ public class PlayerRodeoController01 : MonoBehaviour
             timer += Time.deltaTime;
             float t = timer / mountDuration;
 
-            // ใช้ Lerp เพื่อค่อยๆ เคลื่อนไปหาจุดเกาะ
             transform.position = Vector3.Lerp(startPos, newAnimal.mountPoint.position, t);
             transform.rotation = Quaternion.Lerp(startRot, newAnimal.mountPoint.rotation, t);
 
-            yield return null; // รอเฟรมถัดไป
+            yield return null;
         }
 
-        // จบการปีน: เข้าสู่โหมดขี่ปกติ
         isMounting = false;
         MountSetup(newAnimal);
     }
 
-    // ฟังก์ชันสำหรับตัวแรก (ไม่ต้องสมูท เพราะเริ่มมาก็ขี่เลย)
     void MountAnimalImmediate(Rideable01 newAnimal)
     {
         isJumping = false;
@@ -273,15 +252,13 @@ public class PlayerRodeoController01 : MonoBehaviour
         MountSetup(newAnimal);
     }
 
-    // ฟังก์ชันตั้งค่าต่างๆ (ใช้ร่วมกันทั้งแบบสมูทและแบบปกติ)
     void MountSetup(Rideable01 newAnimal)
     {
-        if (audioSource != null) audioSource.Stop(); // หยุดเสียงเก่าก่อนเริ่มเสียงวิ่งใหม่
+        if (audioSource != null) audioSource.Stop();
 
         currentRideTimer = 0f;
         bounceHeight = 0.15f;
 
-        // --- Logic ปลดล็อกสัตว์ ---
         if (AnimalDatabase.Instance != null)
         {
             int id = newAnimal.animalID;
@@ -298,18 +275,35 @@ public class PlayerRodeoController01 : MonoBehaviour
         }
     }
 
+    // --- [แก้ไขใหม่] ระบบค้นหาเป้าหมายแบบกรวย (Cone) ---
     void FindTargetAnimal()
     {
         Collider[] hits = Physics.OverlapSphere(transform.position, searchRadius, animalLayer);
         Rideable01 closest = null;
         float minDst = float.MaxValue;
+
         foreach (var hit in hits)
         {
             Rideable01 r = hit.GetComponent<Rideable01>();
-            if (r != null && hit.transform.position.z > transform.position.z)
+
+            // ตรวจสอบว่ามี Script Rideable01 ไหม
+            if (r != null)
             {
-                float dst = Vector3.Distance(transform.position, hit.transform.position);
-                if (dst < minDst) { minDst = dst; closest = r; }
+                // 1. หาทิศทางไปยังสัตว์ตัวนั้น
+                Vector3 dirToTarget = (hit.transform.position - transform.position).normalized;
+
+                // 2. คำนวณมุมองศาระหว่าง "ทิศหน้าตรง (World Forward)" กับ "ทิศทางสัตว์"
+                // ใช้ Vector3.forward แทน transform.forward เพื่อให้กรวยพุ่งตรงไปตามถนนเสมอ ไม่เอียงตามตัวละคร
+                if (Vector3.Angle(Vector3.forward, dirToTarget) < viewAngle / 2f)
+                {
+                    // 3. ถ้าอยู่ในมุมมองแล้ว ค่อยเช็คระยะ
+                    float dst = Vector3.Distance(transform.position, hit.transform.position);
+                    if (dst < minDst)
+                    {
+                        minDst = dst;
+                        closest = r;
+                    }
+                }
             }
         }
         targetAnimal = closest;
@@ -341,9 +335,19 @@ public class PlayerRodeoController01 : MonoBehaviour
         }
     }
 
+    // --- [เพิ่ม] วาดเส้น Gizmos เพื่อให้เห็นพื้นที่กรวยในหน้า Scene ---
     void OnDrawGizmos()
     {
-        Gizmos.color = Color.red;
+        // วาดวงกลมระยะค้นหา
+        Gizmos.color = new Color(1, 0, 0, 0.3f);
         Gizmos.DrawWireSphere(transform.position, searchRadius);
+
+        // วาดเส้นขอบเขตกรวย (ซ้าย-ขวา)
+        Vector3 leftDir = Quaternion.Euler(0, -viewAngle / 2f, 0) * Vector3.forward;
+        Vector3 rightDir = Quaternion.Euler(0, viewAngle / 2f, 0) * Vector3.forward;
+
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawLine(transform.position, transform.position + leftDir * searchRadius);
+        Gizmos.DrawLine(transform.position, transform.position + rightDir * searchRadius);
     }
 }

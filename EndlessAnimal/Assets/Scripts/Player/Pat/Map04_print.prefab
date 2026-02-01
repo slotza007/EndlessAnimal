@@ -26,7 +26,7 @@ Transform:
   m_GameObject: {fileID: 755828716625471251}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.59, y: 0.3, z: -50}
+  m_LocalPosition: {x: 0.59, y: 0.3, z: -30}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -50,7 +50,7 @@ MonoBehaviour:
   - {fileID: 3851015956068934394, guid: 739fdf694b1e62946abb835af1fabcac, type: 3}
   - {fileID: 5883155896844355918, guid: ea158193eb7145b4691f972b4edeb004, type: 3}
   spawnRangeX: 5
-  spawnRangeZ: 10
+  spawnRangeZ: 4
   animalCount: 5
 --- !u!1 &1421337594067790153
 GameObject:
