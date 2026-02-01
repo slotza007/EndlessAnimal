@@ -1129,7 +1129,7 @@ MonoBehaviour:
   - {fileID: 1421337594067790153, guid: 920844a735805ca43860d875a7309069, type: 3}
   - {fileID: 6343089339008863868, guid: 10328a64ef793d845b6bd0293446ce24, type: 3}
   sectionLength: 40
-  startSectionCount: 3
+  startSectionCount: 4
 --- !u!4 &1164938430
 Transform:
   m_ObjectHideFlags: 0

@@ -66,7 +66,7 @@ public class GameOverUI : MonoBehaviour
             }
 
             // 4. แสดงผลบนหน้าจอ
-            distanceText.text = "Distance: " + currentScore + "m";
+            distanceText.text = "Distance: " + currentScore + " m";
 
             if (bestScoreText != null)
             {

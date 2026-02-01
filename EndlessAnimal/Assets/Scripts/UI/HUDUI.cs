@@ -10,6 +10,8 @@ public class HUDUI : MonoBehaviour
         if (GameManager.Instance == null) return;
 
         float d = GameManager.Instance.distance;
-        distanceText.text = "Distance : " + Mathf.FloorToInt(d);
+
+        // ปรับแก้บรรทัดนี้เพื่อแสดงผลเป็น "เลข + M"
+        distanceText.text = Mathf.FloorToInt(d).ToString() + " M";
     }
 }
