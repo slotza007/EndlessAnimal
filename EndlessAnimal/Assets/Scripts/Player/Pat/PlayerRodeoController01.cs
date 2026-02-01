@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic; // [เพิ่ม] จำเป็นสำหรับการใช้ Dictionary
 
 public class PlayerRodeoController01 : MonoBehaviour
 {
@@ -10,7 +11,7 @@ public class PlayerRodeoController01 : MonoBehaviour
     public float roadLimitX = 5f;
 
     [Header("Game Mechanics")]
-    public float maxRideTime = 5f;
+    public float maxRideTime = 5f; // ยังคงใช้ดีดตัวผู้เล่นออก (Bucking)
 
     [Header("Rodeo Animation")]
     public float bounceSpeed = 18f;
@@ -36,6 +37,9 @@ public class PlayerRodeoController01 : MonoBehaviour
     private Rigidbody rb;
     private float verticalVelocity = 0f;
     private float currentRideTimer = 0f;
+
+    // [เพิ่ม] สมุดจดบันทึกจำนวนสัตว์ที่ขี่ในรอบนี้ (Key=ID, Value=จำนวน)
+    private Dictionary<int, int> sessionRideCounts = new Dictionary<int, int>();
 
     void Start()
     {
@@ -89,7 +93,7 @@ public class PlayerRodeoController01 : MonoBehaviour
         // กด E เพื่อขี่ตัวใหม่ (ตอนลอยอยู่)
         if (isJumping && Input.GetKeyDown(KeyCode.E) && targetAnimal != null) MountAnimal(targetAnimal);
 
-        // ตอนขี่อยู่: นับเวลาถอยหลัง
+        // ตอนขี่อยู่: นับเวลาถอยหลังเพื่อดีดตัว
         if (!isJumping && currentAnimal != null)
         {
             currentRideTimer += Time.deltaTime;
@@ -97,7 +101,7 @@ public class PlayerRodeoController01 : MonoBehaviour
             // เพิ่มความเด้งตอนใกล้หมดเวลาเตือนผู้เล่น
             bounceHeight = (currentRideTimer > maxRideTime * 0.7f) ? 0.3f : 0.15f;
 
-            // ครบเวลา -> ดีดตัวออกอัตโนมัติ
+            // ครบเวลา -> ดีดตัวออกอัตโนมัติ (สัตว์พยศ)
             if (currentRideTimer >= maxRideTime) JumpOff();
         }
         HandleIndicator();
@@ -162,12 +166,9 @@ public class PlayerRodeoController01 : MonoBehaviour
         isJumping = false;
         currentAnimal = newAnimal;
         targetAnimal = null;
-
-        // [สำคัญ] รีเซ็ตเวลาทุกครั้งที่ขี่ตัวใหม่
         currentRideTimer = 0f;
-
         bounceHeight = 0.15f;
-        newAnimal.SetRidden(true); // สั่งสัตว์ตัวใหม่ว่าถูกขี่แล้ว (เพื่อหยุดนับเวลาตาย)
+        newAnimal.SetRidden(true);
 
         if (anim != null) anim.SetBool("isJumping", false);
         if (targetIndicator != null) targetIndicator.SetActive(false);
@@ -176,6 +177,34 @@ public class PlayerRodeoController01 : MonoBehaviour
         rb.isKinematic = true;
         transform.position = newAnimal.mountPoint.position;
         transform.rotation = newAnimal.mountPoint.rotation;
+
+        // --- [แก้ไข] ระบบนับจำนวนเพื่อปลดล็อก ---
+        if (AnimalDatabase.Instance != null)
+        {
+            int id = newAnimal.animalID;
+
+            // 1. เพิ่มจำนวนการขี่
+            if (!sessionRideCounts.ContainsKey(id))
+            {
+                sessionRideCounts[id] = 0;
+            }
+            sessionRideCounts[id]++;
+
+            Debug.Log($"ขี่ตัว ID {id} ไปแล้ว {sessionRideCounts[id]} ตัว");
+
+            // 2. เช็คว่าครบกำหนดหรือยัง
+            // ตรวจสอบ Index เพื่อป้องกัน Error กรณี ID เกิน Database
+            if (id >= 0 && id < AnimalDatabase.Instance.animals.Length)
+            {
+                int required = AnimalDatabase.Instance.animals[id].requiredAmount;
+
+                // ถ้าขี่ครบตามจำนวนที่กำหนด ให้ปลดล็อก
+                if (sessionRideCounts[id] >= required)
+                {
+                    AnimalDatabase.Instance.UnlockAnimal(id);
+                }
+            }
+        }
     }
 
     void FindTargetAnimal()

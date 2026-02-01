@@ -1,14 +1,15 @@
 ﻿using UnityEngine;
 
-[System.Serializable]
+[System.Serializable] // บรรทัดนี้สำคัญมาก ถ้าไม่มี Inspector จะมองไม่เห็น
 public class AnimalData
 {
-    public string animalName;       // ชื่อสัตว์
-    public GameObject modelPrefab;  // โมเดลสำหรับโชว์
-    public bool isUnlocked;         // จับได้หรือยัง?
+    public string animalName;
+    public GameObject modelPrefab;
+    public bool isUnlocked;
 
-    [Header("Taming Settings")]
-    public float tameDuration;      // ต้องขี่นานกี่วินาทีถึงจะจับได้ (เช่น 5 วินาที)
+    [Header("Unlock Settings")]
+    // ตัวแปรนี้คือตัวที่จะไปโผล่ใน Inspector ครับ
+    public int requiredAmount;
 }
 
 public class AnimalDatabase : MonoBehaviour
@@ -18,16 +19,8 @@ public class AnimalDatabase : MonoBehaviour
 
     void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
-
+        if (Instance == null) { Instance = this; DontDestroyOnLoad(gameObject); }
+        else { Destroy(gameObject); }
         LoadSaveData();
     }
 
@@ -35,33 +28,23 @@ public class AnimalDatabase : MonoBehaviour
     {
         for (int i = 0; i < animals.Length; i++)
         {
-            // ตัวแรก (Index 0) ให้ฟรีเสมอ
-            if (i == 0)
-            {
-                animals[i].isUnlocked = true;
-            }
+            if (i == 0) animals[i].isUnlocked = true;
             else
             {
-                // เช็คจาก Save (1 = จับได้แล้ว)
                 bool unlocked = PlayerPrefs.GetInt("Animal_" + i + "_Unlocked", 0) == 1;
                 animals[i].isUnlocked = unlocked;
             }
         }
     }
 
-    // ฟังก์ชันนี้เอาไว้ให้เพื่อน (Role Gameplay) เรียกใช้ตอนขี่ครบเวลา
     public void UnlockAnimal(int index)
     {
-        // ถ้ายังไม่เคยจับได้ ให้ทำการปลดล็อก
         if (index < animals.Length && !animals[index].isUnlocked)
         {
             animals[index].isUnlocked = true;
             PlayerPrefs.SetInt("Animal_" + index + "_Unlocked", 1);
             PlayerPrefs.Save();
-
             Debug.Log("🎉 CAUGHT NEW ANIMAL: " + animals[index].animalName);
-
-            // ตรงนี้อาจจะใส่ Code ให้ UI เด้งแจ้งเตือนว่า "จับสัตว์ใหม่ได้!" ในอนาคต
         }
     }
 

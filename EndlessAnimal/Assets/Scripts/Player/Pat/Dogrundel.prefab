@@ -614,6 +614,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3b5cf6901838ab9428e7c3d2b5bf6f72, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Rideable01
+  animalID: 2
   mountPoint: {fileID: 6638599563028454772}
   runSpeed: 5
   lifeTime: 15

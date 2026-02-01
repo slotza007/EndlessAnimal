@@ -21,18 +21,15 @@ public class MainMenuController : MonoBehaviour
 
     void Start()
     {
-        // โชว์คะแนน
         int bestScore = PlayerPrefs.GetInt("BestScore", 0);
         if (bestScoreText != null) bestScoreText.text = "BEST: " + bestScore + "m";
 
-        // โหลดตัวเลือกสัตว์ล่าสุด
         currentIndex = PlayerPrefs.GetInt("SelectedAnimal", 0);
         UpdateAnimalDisplay();
     }
 
     void Update()
     {
-        // หมุนโชว์ตัว
         if (modelHolder != null)
         {
             modelHolder.Rotate(0, rotateSpeed * Time.deltaTime, 0);
@@ -55,6 +52,7 @@ public class MainMenuController : MonoBehaviour
 
     public void PlayGame()
     {
+        // เช็คชื่อ Scene ให้ตรงกับของคุณ (MainsceneTest01 หรือ MainsceneTest)
         SceneManager.LoadScene("MainsceneTest01");
     }
 
@@ -70,26 +68,12 @@ public class MainMenuController : MonoBehaviour
             currentModel.transform.localPosition = Vector3.zero;
             currentModel.transform.localRotation = Quaternion.identity;
 
-            // ========================================================
-            // [จุดแก้ไข] : ปิดสคริปต์ Rideable01 เพื่อไม่ให้วิ่งในหน้าเมนู
-            // ========================================================
-
-            // 1. ค้นหาสคริปต์ Rideable01 ในตัวที่เพิ่งสร้าง
+            // ปิดสคริปต์วิ่งในหน้าเมนู
             Rideable01 runScript = currentModel.GetComponent<Rideable01>();
+            if (runScript != null) runScript.enabled = false;
 
-            if (runScript != null)
-            {
-                // สั่งปิดสคริปต์ทันที -> ผลคือ Update() จะไม่ทำงาน มันจะยืนนิ่งๆ ไม่วิ่งไปข้างหน้า
-                runScript.enabled = false;
-            }
-
-            // 2. ปิด Root Motion ของ Animator ด้วย (เผื่อท่าวิ่งมันดึงตัวไปข้างหน้า)
             Animator anim = currentModel.GetComponent<Animator>();
-            if (anim != null)
-            {
-                anim.applyRootMotion = false;
-            }
-            // ========================================================
+            if (anim != null) anim.applyRootMotion = false;
         }
 
         if (animalNameText != null) animalNameText.text = data.animalName;
@@ -106,7 +90,10 @@ public class MainMenuController : MonoBehaviour
         {
             playButton.interactable = false;
             playButtonText.text = "LOCKED";
-            if (lockConditionText != null) lockConditionText.text = $"Ride for {data.tameDuration}s to get!";
+
+            // [จุดที่แก้] เปลี่ยนจาก tameDuration เป็น requiredAmount
+            if (lockConditionText != null)
+                lockConditionText.text = $"Ride {data.requiredAmount} times in one run!";
         }
     }
 }
