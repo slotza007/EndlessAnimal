@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections; // จำเป็นสำหรับ IEnumerator
 using System.Collections.Generic;
 
 public class PlayerRodeoController01 : MonoBehaviour
@@ -18,6 +19,9 @@ public class PlayerRodeoController01 : MonoBehaviour
     public float bounceHeight = 0.15f;
     public float tiltAmount = 25f;
 
+    // [เพิ่ม] ความเร็วในการพุ่งเข้าไปเกาะ (ยิ่งน้อยยิ่งเร็ว 0.1 - 0.2 กำลังดี)
+    public float mountDuration = 0.15f;
+
     [Header("Target System")]
     public float searchRadius = 8f;
     public LayerMask animalLayer;
@@ -33,17 +37,19 @@ public class PlayerRodeoController01 : MonoBehaviour
     [Header("Audio Settings")]
     public AudioSource audioSource;
     public AudioClip jumpSound;
-    [Range(0f, 1f)] public float jumpVolume = 1f;    // ปรับความดังเสียงกระโดดได้ที่นี่
+    [Range(0f, 1f)] public float jumpVolume = 1f;
     public AudioClip runningSound;
-    [Range(0f, 1f)] public float runningVolume = 0.5f; // ปรับความดังเสียงวิ่งได้ที่นี่
+    [Range(0f, 1f)] public float runningVolume = 0.5f;
 
     // State Variables
     private bool isJumping = false;
+    private bool isMounting = false; // [เพิ่ม] เช็คว่ากำลังพุ่งไปเกาะอยู่ไหม
     private Rideable01 currentAnimal;
     private Rideable01 targetAnimal;
     private Rigidbody rb;
     private float verticalVelocity = 0f;
     private float currentRideTimer = 0f;
+
     private Dictionary<int, int> sessionRideCounts = new Dictionary<int, int>();
 
     void Start()
@@ -79,8 +85,15 @@ public class PlayerRodeoController01 : MonoBehaviour
             animalToRide = debugStartingAnimal;
         }
 
-        if (animalToRide != null) MountAnimal(animalToRide);
-        else JumpOff();
+        if (animalToRide != null)
+        {
+            // ตัวแรกให้วาร์ปไปเลย (ไม่ต้องสมูท)
+            MountAnimalImmediate(animalToRide);
+        }
+        else
+        {
+            JumpOff();
+        }
     }
 
     void Update()
@@ -91,13 +104,15 @@ public class PlayerRodeoController01 : MonoBehaviour
             return;
         }
 
-        if (!isJumping && currentAnimal != null)
+        // [แก้] เพิ่ม !isMounting เพื่อไม่ให้ทำงานตอนกำลังพุ่ง
+        if (!isJumping && currentAnimal != null && !isMounting)
         {
+            // --- Audio Logic ---
             if (audioSource != null && !audioSource.isPlaying && runningSound != null)
             {
                 audioSource.clip = runningSound;
                 audioSource.loop = true;
-                audioSource.volume = runningVolume; // ใช้ค่าจาก Inspector
+                audioSource.volume = runningVolume;
                 audioSource.Play();
             }
 
@@ -108,6 +123,7 @@ public class PlayerRodeoController01 : MonoBehaviour
         }
         else
         {
+            // ถ้ากระโดด หรือกำลังพุ่งเกาะ ให้หยุดเสียงวิ่ง
             if (audioSource != null && audioSource.isPlaying && audioSource.clip == runningSound)
             {
                 audioSource.Stop();
@@ -115,8 +131,14 @@ public class PlayerRodeoController01 : MonoBehaviour
             }
         }
 
-        if (Input.GetKeyDown(KeyCode.Space) && !isJumping) JumpOff();
-        if (isJumping && Input.GetKeyDown(KeyCode.E) && targetAnimal != null) MountAnimal(targetAnimal);
+        // ห้ามกระโดดซ้ำตอนกำลังพุ่งเกาะ (!isMounting)
+        if (Input.GetKeyDown(KeyCode.Space) && !isJumping && !isMounting) JumpOff();
+
+        // กด E เพื่อพุ่งเกาะ (เรียก Coroutine แทนฟังก์ชันปกติ)
+        if (isJumping && Input.GetKeyDown(KeyCode.E) && targetAnimal != null)
+        {
+            StartCoroutine(SmoothMount(targetAnimal));
+        }
 
         HandleIndicator();
     }
@@ -155,7 +177,8 @@ public class PlayerRodeoController01 : MonoBehaviour
 
     void LateUpdate()
     {
-        if (!isJumping && currentAnimal != null)
+        // [แก้] เพิ่ม !isMounting เพื่อไม่ให้มันตีกับ Coroutine ที่กำลังเลื่อนตำแหน่ง
+        if (!isJumping && currentAnimal != null && !isMounting)
         {
             float bounceY = Mathf.Sin(Time.time * bounceSpeed) * bounceHeight;
             transform.position = currentAnimal.mountPoint.position + new Vector3(0, bounceY, 0);
@@ -168,17 +191,18 @@ public class PlayerRodeoController01 : MonoBehaviour
 
     void JumpOff()
     {
+        // --- Audio Logic ---
         if (audioSource != null && jumpSound != null)
         {
-            audioSource.PlayOneShot(jumpSound, jumpVolume); // ใช้ค่าความดังจาก Inspector
+            audioSource.PlayOneShot(jumpSound, jumpVolume);
         }
-
         if (audioSource != null)
         {
-            audioSource.clip = null;
+            audioSource.clip = null; // เคลียร์คลิปเสียงวิ่ง
         }
 
         isJumping = true;
+        isMounting = false; // เผื่อกดโดดตอนกำลังปีน (safety)
 
         if (currentAnimal != null) currentAnimal.SetRidden(false);
         currentAnimal = null;
@@ -190,15 +214,51 @@ public class PlayerRodeoController01 : MonoBehaviour
         verticalVelocity = jumpPower;
     }
 
-    void MountAnimal(Rideable01 newAnimal)
+    // --- [เพิ่มใหม่] ฟังก์ชันสำหรับทำให้การเกาะสมูท ---
+    IEnumerator SmoothMount(Rideable01 newAnimal)
     {
-        if (audioSource != null) audioSource.Stop();
+        isJumping = false;
+        isMounting = true; // บอกระบบว่ากำลังปีน (ห้ามขยับอย่างอื่น)
 
+        currentAnimal = newAnimal;
+        targetAnimal = null;
+
+        if (anim != null) anim.SetBool("isJumping", false);
+        if (targetIndicator != null) targetIndicator.SetActive(false);
+
+        rb.linearVelocity = Vector3.zero;
+        rb.isKinematic = true;
+
+        newAnimal.SetRidden(true); // สั่งสัตว์ว่าถูกขี่แล้ว
+
+        // --- ช่วงเวลาแห่งการ Lerp (เคลื่อนที่สมูท) ---
+        float timer = 0f;
+        Vector3 startPos = transform.position;
+        Quaternion startRot = transform.rotation;
+
+        while (timer < mountDuration)
+        {
+            timer += Time.deltaTime;
+            float t = timer / mountDuration;
+
+            // ใช้ Lerp เพื่อค่อยๆ เคลื่อนไปหาจุดเกาะ
+            transform.position = Vector3.Lerp(startPos, newAnimal.mountPoint.position, t);
+            transform.rotation = Quaternion.Lerp(startRot, newAnimal.mountPoint.rotation, t);
+
+            yield return null; // รอเฟรมถัดไป
+        }
+
+        // จบการปีน: เข้าสู่โหมดขี่ปกติ
+        isMounting = false;
+        MountSetup(newAnimal);
+    }
+
+    // ฟังก์ชันสำหรับตัวแรก (ไม่ต้องสมูท เพราะเริ่มมาก็ขี่เลย)
+    void MountAnimalImmediate(Rideable01 newAnimal)
+    {
         isJumping = false;
         currentAnimal = newAnimal;
         targetAnimal = null;
-        currentRideTimer = 0f;
-        bounceHeight = 0.15f;
         newAnimal.SetRidden(true);
 
         if (anim != null) anim.SetBool("isJumping", false);
@@ -206,9 +266,22 @@ public class PlayerRodeoController01 : MonoBehaviour
 
         rb.linearVelocity = Vector3.zero;
         rb.isKinematic = true;
+
         transform.position = newAnimal.mountPoint.position;
         transform.rotation = newAnimal.mountPoint.rotation;
 
+        MountSetup(newAnimal);
+    }
+
+    // ฟังก์ชันตั้งค่าต่างๆ (ใช้ร่วมกันทั้งแบบสมูทและแบบปกติ)
+    void MountSetup(Rideable01 newAnimal)
+    {
+        if (audioSource != null) audioSource.Stop(); // หยุดเสียงเก่าก่อนเริ่มเสียงวิ่งใหม่
+
+        currentRideTimer = 0f;
+        bounceHeight = 0.15f;
+
+        // --- Logic ปลดล็อกสัตว์ ---
         if (AnimalDatabase.Instance != null)
         {
             int id = newAnimal.animalID;
