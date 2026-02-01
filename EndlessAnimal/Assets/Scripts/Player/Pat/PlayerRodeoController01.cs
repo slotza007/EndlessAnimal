@@ -24,7 +24,6 @@ public class PlayerRodeoController01 : MonoBehaviour
     public float indicatorHeight = 0.2f;
 
     [Header("Setup")]
-    // ไม่บังคับต้องใส่ใน Inspector แล้ว เพราะเราจะโหลดจาก Database
     public Rideable01 debugStartingAnimal;
 
     [Header("Animation")]
@@ -44,7 +43,7 @@ public class PlayerRodeoController01 : MonoBehaviour
         rb.useGravity = false;
         rb.constraints = RigidbodyConstraints.FreezeRotation;
 
-        // --- ส่วนที่แก้ไข: ระบบเสกสัตว์ตามที่เลือกมา ---
+        // ระบบเสกสัตว์ตามที่เลือกมา (ถ้ามี Database)
         SpawnSelectedAnimal();
     }
 
@@ -52,57 +51,53 @@ public class PlayerRodeoController01 : MonoBehaviour
     {
         Rideable01 animalToRide = null;
 
-        // 1. ตรวจสอบว่ามี AnimalDatabase อยู่ไหม (ต้องข้ามมาจากหน้า Menu)
         if (AnimalDatabase.Instance != null)
         {
-            // ดึง index ที่เลือกไว้ (default คือ 0)
             int selectedIndex = PlayerPrefs.GetInt("SelectedAnimal", 0);
-
-            // ดึง Prefab จาก Database
-            GameObject prefab = AnimalDatabase.Instance.animals[selectedIndex].modelPrefab;
-
-            // สร้างสัตว์ขึ้นมาที่ตำแหน่งเดียวกับผู้เล่น
-            GameObject newAnimalObj = Instantiate(prefab, transform.position, Quaternion.identity);
-
-            // ดึง Component Rideable01 ออกมา
-            animalToRide = newAnimalObj.GetComponent<Rideable01>();
+            if (selectedIndex < AnimalDatabase.Instance.animals.Length)
+            {
+                GameObject prefab = AnimalDatabase.Instance.animals[selectedIndex].modelPrefab;
+                if (prefab != null)
+                {
+                    GameObject newAnimalObj = Instantiate(prefab, transform.position, Quaternion.identity);
+                    animalToRide = newAnimalObj.GetComponent<Rideable01>();
+                }
+            }
         }
         else
         {
-            // ถ้าไม่มี Database (เช่น เทส Scene เกมเพียวๆ) ให้ใช้ตัว Debug ใน Inspector
-            if (debugStartingAnimal != null)
-            {
-                animalToRide = debugStartingAnimal;
-            }
+            if (debugStartingAnimal != null) animalToRide = debugStartingAnimal;
         }
 
-        // 2. ถ้ามีสัตว์ ให้ขี่เลย
         if (animalToRide != null)
         {
             MountAnimal(animalToRide);
         }
         else
         {
-            // ถ้าไม่มีอะไรเลย ให้กระโดด
             JumpOff();
         }
     }
 
-    // ... (ส่วน Update, FixedUpdate, LateUpdate, JumpOff, FindTargetAnimal, HandleIndicator คงเดิม) ...
-    // ... (ก๊อปปี้ส่วนที่เหลือจากไฟล์เก่ามาใส่ตรงนี้ หรือใช้ไฟล์เก่าแล้วแก้แค่ Start กับเพิ่มฟังก์ชัน SpawnSelectedAnimal ก็ได้ครับ) ...
-
-    // เพื่อความชัวร์ ผมใส่ Code ส่วนที่เหลือย่อๆ ไว้ให้นะครับ (Logic เดิมเป๊ะๆ)
     void Update()
     {
         if (GameManager.Instance != null && !GameManager.Instance.isPlaying) return;
 
+        // กด Space เพื่อกระโดดเอง
         if (Input.GetKeyDown(KeyCode.Space) && !isJumping) JumpOff();
+
+        // กด E เพื่อขี่ตัวใหม่ (ตอนลอยอยู่)
         if (isJumping && Input.GetKeyDown(KeyCode.E) && targetAnimal != null) MountAnimal(targetAnimal);
 
+        // ตอนขี่อยู่: นับเวลาถอยหลัง
         if (!isJumping && currentAnimal != null)
         {
             currentRideTimer += Time.deltaTime;
+
+            // เพิ่มความเด้งตอนใกล้หมดเวลาเตือนผู้เล่น
             bounceHeight = (currentRideTimer > maxRideTime * 0.7f) ? 0.3f : 0.15f;
+
+            // ครบเวลา -> ดีดตัวออกอัตโนมัติ
             if (currentRideTimer >= maxRideTime) JumpOff();
         }
         HandleIndicator();
@@ -167,11 +162,16 @@ public class PlayerRodeoController01 : MonoBehaviour
         isJumping = false;
         currentAnimal = newAnimal;
         targetAnimal = null;
+
+        // [สำคัญ] รีเซ็ตเวลาทุกครั้งที่ขี่ตัวใหม่
         currentRideTimer = 0f;
+
         bounceHeight = 0.15f;
-        newAnimal.SetRidden(true);
+        newAnimal.SetRidden(true); // สั่งสัตว์ตัวใหม่ว่าถูกขี่แล้ว (เพื่อหยุดนับเวลาตาย)
+
         if (anim != null) anim.SetBool("isJumping", false);
         if (targetIndicator != null) targetIndicator.SetActive(false);
+
         rb.linearVelocity = Vector3.zero;
         rb.isKinematic = true;
         transform.position = newAnimal.mountPoint.position;

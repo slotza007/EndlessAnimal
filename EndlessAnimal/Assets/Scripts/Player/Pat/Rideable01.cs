@@ -14,8 +14,19 @@ public class Rideable01 : MonoBehaviour
 
     void Start()
     {
-        // ตั้งเวลาทำลายตัวเอง (ถ้าไม่มีคนมาขี่)
-        Destroy(gameObject, lifeTime);
+        // [FIX] เปลี่ยนจาก Destroy(gameObject, time) เป็น Invoke
+        // เพื่อให้เราสามารถยกเลิกคำสั่งตายได้ตอนที่มีคนมาขี่
+        Invoke("DestroySelf", lifeTime);
+    }
+
+    // ฟังก์ชันใหม่สำหรับสั่งทำลายตัวเอง
+    void DestroySelf()
+    {
+        // เช็คอีกรอบเพื่อความชัวร์ ถ้าไม่มีคนขี่ค่อยลบ
+        if (!isBeingRidden)
+        {
+            Destroy(gameObject);
+        }
     }
 
     void Update()
@@ -36,13 +47,15 @@ public class Rideable01 : MonoBehaviour
         isBeingRidden = status;
         if (status)
         {
-            CancelInvoke(); // ถ้าถูกขี่แล้ว ยกเลิกการนับเวลาตาย
+            // [FIX] ยกเลิกคำสั่ง DestroySelf ที่ตั้งไว้
+            // สัตว์จะไม่หายไปตราบใดที่เราขี่มัน
+            CancelInvoke("DestroySelf");
         }
     }
 
     void OnTriggerEnter(Collider other)
     {
-        // ถ้าขี่อยู่ และชนกับสิ่งกีดขวาง (ไม่ว่าจะชนมุมไหน) -> Game Over
+        // ถ้าขี่อยู่ และชนกับสิ่งกีดขวาง
         if (isBeingRidden && other.CompareTag("Obstacle"))
         {
             Debug.Log("Game Over: ชนกับ " + other.gameObject.name);
