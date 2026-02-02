@@ -5,6 +5,9 @@ using UnityEngine.UI;
 
 public class MainMenuController : MonoBehaviour
 {
+    [Header("Tutorial UI")]
+    public GameObject tutorialPanel;
+
     [Header("3D Showcase")]
     public Transform modelHolder;
     public float rotateSpeed = 30f;
@@ -54,6 +57,18 @@ public class MainMenuController : MonoBehaviour
     {
         // เช็คชื่อ Scene ให้ตรงกับของคุณ (MainsceneTest01 หรือ MainsceneTest)
         SceneManager.LoadScene("MainsceneTest01");
+    }
+
+    public void OpenTutorial()
+    {
+        if (tutorialPanel != null)
+            tutorialPanel.SetActive(true);
+    }
+
+    public void CloseTutorial()
+    {
+        if (tutorialPanel != null)
+            tutorialPanel.SetActive(false);
     }
 
     void UpdateAnimalDisplay()
